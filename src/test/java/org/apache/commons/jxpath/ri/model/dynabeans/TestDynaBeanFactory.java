@@ -16,11 +16,15 @@
  */
 package org.apache.commons.jxpath.ri.model.dynabeans;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
+
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.jxpath.AbstractFactory;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.NestedTestBean;
-import org.apache.commons.jxpath.Pointer;
 
 /**
  * Test AbstractFactory.
@@ -28,45 +32,39 @@ import org.apache.commons.jxpath.Pointer;
  * @author Dmitri Plotnikov
  * @version $Revision$ $Date$
  */
-public class TestDynaBeanFactory extends AbstractFactory {
+public class TestDynaBeanFactory {
 
-    /**
-     */
-    public boolean createObject(
-        JXPathContext context,
-        Pointer pointer,
-        Object parent,
-        String name,
-        int index) 
-    {
-        if (name.equals("nestedBean")) {
-            ((DynaBean) parent).set(
-                "nestedBean",
-                new NestedTestBean("newName"));
-            return true;
-        }
-        else if (name.equals("beans")) {
-            DynaBean bean = (DynaBean) parent;
-            Object beans[] = (Object[]) bean.get("beans");
-            if (beans == null || index >= beans.length) {
-                beans = new NestedTestBean[index + 1];
-                bean.set("beans", beans);
-            }
-            beans[index] = new NestedTestBean("newName");
-            return true;
-        }
-        else if (name.equals("integers")) {
-            DynaBean bean = (DynaBean) parent;
-            bean.set("integers", index, new Integer(0));
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     */
-    public boolean declareVariable(JXPathContext context, String name) {
-        context.getVariables().declareVariable(name, null);
-        return true;
-    }
+	public static AbstractFactory mockAbstractFactory1() {
+		AbstractFactory mockInstance = spy(AbstractFactory.class);
+		doAnswer((stubInvo) -> {
+			Object parent = stubInvo.getArgument(2);
+			String name = stubInvo.getArgument(3);
+			int index = stubInvo.getArgument(4);
+			if (name.equals("nestedBean")) {
+				((DynaBean) parent).set("nestedBean", new NestedTestBean("newName"));
+				return true;
+			} else if (name.equals("beans")) {
+				DynaBean bean = (DynaBean) parent;
+				Object beans[] = (Object[]) bean.get("beans");
+				if (beans == null || index >= beans.length) {
+					beans = new NestedTestBean[index + 1];
+					bean.set("beans", beans);
+				}
+				beans[index] = new NestedTestBean("newName");
+				return true;
+			} else if (name.equals("integers")) {
+				DynaBean bean = (DynaBean) parent;
+				bean.set("integers", index, new Integer(0));
+				return true;
+			}
+			return false;
+		}).when(mockInstance).createObject(any(), any(), any(), any(), anyInt());
+		doAnswer((stubInvo) -> {
+			JXPathContext context = stubInvo.getArgument(0);
+			String name = stubInvo.getArgument(1);
+			context.getVariables().declareVariable(name, null);
+			return true;
+		}).when(mockInstance).declareVariable(any(), any());
+		return mockInstance;
+	}
 }

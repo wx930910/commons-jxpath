@@ -16,9 +16,14 @@
  */
 package org.apache.commons.jxpath.ri.model.dom;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+
 import org.apache.commons.jxpath.AbstractFactory;
 import org.apache.commons.jxpath.JXPathContext;
-import org.apache.commons.jxpath.Pointer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -28,59 +33,49 @@ import org.w3c.dom.Node;
  * @author Dmitri Plotnikov
  * @version $Revision$ $Date$
  */
-public class TestDOMFactory extends AbstractFactory {
+public class TestDOMFactory {
 
-    /**
-     * Return <b>false</b> if this factory cannot create the requested object.
-     */
-    public boolean createObject(
-        JXPathContext context,
-        Pointer pointer,
-        Object parent,
-        String name,
-        int index) 
-    {
-        if (name.equals("location")
-            || name.equals("address")
-            || name.equals("street")) {
-            addDOMElement((Node) parent, index, name, null);
-            return true;
-        }
-        if (name.startsWith("price:")) {
-            String namespaceURI = context.getNamespaceURI("price");
-            addDOMElement((Node) parent, index, name, namespaceURI);
-            return true;
-        }
-        return false;
-    }
+	public static AbstractFactory mockAbstractFactory1() {
+		AbstractFactory mockInstance = spy(AbstractFactory.class);
+		doReturn(false).when(mockInstance).declareVariable(any(), any());
+		doAnswer((stubInvo) -> {
+			JXPathContext context = stubInvo.getArgument(0);
+			Object parent = stubInvo.getArgument(2);
+			String name = stubInvo.getArgument(3);
+			int index = stubInvo.getArgument(4);
+			if (name.equals("location") || name.equals("address") || name.equals("street")) {
+				addDOMElement((Node) parent, index, name, null);
+				return true;
+			}
+			if (name.startsWith("price:")) {
+				String namespaceURI = context.getNamespaceURI("price");
+				addDOMElement((Node) parent, index, name, namespaceURI);
+				return true;
+			}
+			return false;
+		}).when(mockInstance).createObject(any(), any(), any(), any(), anyInt());
+		return mockInstance;
+	}
 
-    private void addDOMElement(Node parent, int index, String tag, String namespaceURI) {
-        Node child = parent.getFirstChild();
-        int count = 0;
-        while (child != null) {
-            if (child.getNodeName().equals(tag)) {
-                count++;
-            }
-            child = child.getNextSibling();
-        }
-
-        // Keep inserting new elements until we have index + 1 of them
-        while (count <= index) {
-            Document doc = parent.getOwnerDocument();
-            Node newElement;
-            if (namespaceURI == null) {
-                newElement = doc.createElement(tag);
-            } 
-            else {
-                newElement = doc.createElementNS(namespaceURI, tag);
-            }
-       
-            parent.appendChild(newElement);
-            count++;
-        }
-    }
-
-    public boolean declareVariable(JXPathContext context, String name) {
-        return false;
-    }
+	private static void addDOMElement(Node parent, int index, String tag, String namespaceURI) {
+		Node child = parent.getFirstChild();
+		int count = 0;
+		while (child != null) {
+			if (child.getNodeName().equals(tag)) {
+				count++;
+			}
+			child = child.getNextSibling();
+		}
+		while (count <= index) {
+			Document doc = parent.getOwnerDocument();
+			Node newElement;
+			if (namespaceURI == null) {
+				newElement = doc.createElement(tag);
+			} else {
+				newElement = doc.createElementNS(namespaceURI, tag);
+			}
+			parent.appendChild(newElement);
+			count++;
+		}
+	}
 }
