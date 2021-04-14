@@ -20,7 +20,6 @@ import org.apache.commons.jxpath.AbstractFactory;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.ri.model.XMLModelTestCase;
 import org.apache.commons.jxpath.xml.DocumentContainer;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -36,106 +35,92 @@ import org.w3c.dom.NodeList;
 
 public class DOMModelTest extends XMLModelTestCase {
 
-    protected String getModel() {
-        return DocumentContainer.MODEL_DOM;
-    }
+	private static void addDOMElement(Node parent, int index, String tag, String namespaceURI) {
+		Node child = parent.getFirstChild();
+		int count = 0;
+		while (child != null) {
+			if (child.getNodeName().equals(tag)) {
+				count++;
+			}
+			child = child.getNextSibling();
+		}
+		while (count <= index) {
+			Document doc = parent.getOwnerDocument();
+			Node newElement;
+			if (namespaceURI == null) {
+				newElement = doc.createElement(tag);
+			} else {
+				newElement = doc.createElementNS(namespaceURI, tag);
+			}
+			parent.appendChild(newElement);
+			count++;
+		}
+	}
 
-    protected AbstractFactory getAbstractFactory() {
-        return new TestDOMFactory();
-    }
-    
-    public void testGetNode() {
-        assertXPathNodeType(context, "/", Document.class);
-        assertXPathNodeType(context, "/vendor/location", Element.class);
-        assertXPathNodeType(context, "//location/@name", Attr.class);
-        assertXPathNodeType(context, "//vendor", Element.class);
-    }
+	protected String getModel() {
+		return DocumentContainer.MODEL_DOM;
+	}
 
-    public void testGetElementDescendantOrSelf() {
-        JXPathContext childContext = context.getRelativeContext(context.getPointer("/vendor"));
-        assertTrue(childContext.getContextBean() instanceof Element);
-        assertXPathNodeType(childContext, "//vendor", Element.class);
-    }
+	protected AbstractFactory getAbstractFactory() {
+		return TestDOMFactory.mockAbstractFactory1();
+	}
 
-    protected String getXMLSignature(
-        Object node,
-        boolean elements,
-        boolean attributes,
-        boolean text,
-        boolean pi) 
-    {
-        StringBuffer buffer = new StringBuffer();
-        appendXMLSignature(buffer, node, elements, attributes, text, pi);
-        return buffer.toString();
-    }
+	public void testGetNode() {
+		assertXPathNodeType(context, "/", Document.class);
+		assertXPathNodeType(context, "/vendor/location", Element.class);
+		assertXPathNodeType(context, "//location/@name", Attr.class);
+		assertXPathNodeType(context, "//vendor", Element.class);
+	}
 
-    private void appendXMLSignature(
-        StringBuffer buffer,
-        Object object,
-        boolean elements,
-        boolean attributes,
-        boolean text,
-        boolean pi) 
-    {
-        Node node = (Node) object;
-        int type = node.getNodeType();
-        switch (type) {
-            case Node.DOCUMENT_NODE :
-                buffer.append("<D>");
-                appendXMLSignature(
-                    buffer,
-                    node.getChildNodes(),
-                    elements,
-                    attributes,
-                    text,
-                    pi);
-                buffer.append("</D");
-                break;
+	public void testGetElementDescendantOrSelf() {
+		JXPathContext childContext = context.getRelativeContext(context.getPointer("/vendor"));
+		assertTrue(childContext.getContextBean() instanceof Element);
+		assertXPathNodeType(childContext, "//vendor", Element.class);
+	}
 
-            case Node.ELEMENT_NODE :
-                String tag = elements ? ((Element) node).getTagName() : "E";
-                buffer.append("<");
-                buffer.append(tag);
-                buffer.append(">");
-                appendXMLSignature(
-                    buffer,
-                    node.getChildNodes(),
-                    elements,
-                    attributes,
-                    text,
-                    pi);
-                buffer.append("</");
-                buffer.append(tag);
-                buffer.append(">");
-                break;
+	protected String getXMLSignature(Object node, boolean elements, boolean attributes, boolean text, boolean pi) {
+		StringBuffer buffer = new StringBuffer();
+		appendXMLSignature(buffer, node, elements, attributes, text, pi);
+		return buffer.toString();
+	}
 
-            case Node.TEXT_NODE :
-            case Node.CDATA_SECTION_NODE :
-                if (text) {
-                    String string = node.getNodeValue();
-                    string = string.replace('\n', '=');
-                    buffer.append(string);
-                }
-                break;
-        }
-    }
+	private void appendXMLSignature(StringBuffer buffer, Object object, boolean elements, boolean attributes,
+			boolean text, boolean pi) {
+		Node node = (Node) object;
+		int type = node.getNodeType();
+		switch (type) {
+		case Node.DOCUMENT_NODE:
+			buffer.append("<D>");
+			appendXMLSignature(buffer, node.getChildNodes(), elements, attributes, text, pi);
+			buffer.append("</D");
+			break;
 
-    private void appendXMLSignature(
-        StringBuffer buffer,
-        NodeList children,
-        boolean elements,
-        boolean attributes,
-        boolean text,
-        boolean pi) 
-    {
-        for (int i = 0; i < children.getLength(); i++) {
-            appendXMLSignature(
-                buffer,
-                children.item(i),
-                elements,
-                attributes,
-                text,
-                pi);
-        }
-    }
+		case Node.ELEMENT_NODE:
+			String tag = elements ? ((Element) node).getTagName() : "E";
+			buffer.append("<");
+			buffer.append(tag);
+			buffer.append(">");
+			appendXMLSignature(buffer, node.getChildNodes(), elements, attributes, text, pi);
+			buffer.append("</");
+			buffer.append(tag);
+			buffer.append(">");
+			break;
+
+		case Node.TEXT_NODE:
+		case Node.CDATA_SECTION_NODE:
+			if (text) {
+				String string = node.getNodeValue();
+				string = string.replace('\n', '=');
+				buffer.append(string);
+			}
+			break;
+		}
+	}
+
+	private void appendXMLSignature(StringBuffer buffer, NodeList children, boolean elements, boolean attributes,
+			boolean text, boolean pi) {
+		for (int i = 0; i < children.getLength(); i++) {
+			appendXMLSignature(buffer, children.item(i), elements, attributes, text, pi);
+		}
+	}
 }
