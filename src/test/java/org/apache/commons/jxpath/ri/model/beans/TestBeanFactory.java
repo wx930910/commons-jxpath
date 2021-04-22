@@ -16,6 +16,12 @@
  */
 package org.apache.commons.jxpath.ri.model.beans;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+
 import org.apache.commons.jxpath.AbstractFactory;
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.NestedTestBean;
@@ -28,42 +34,32 @@ import org.apache.commons.jxpath.TestBean;
  * @author Dmitri Plotnikov
  * @version $Revision$ $Date$
  */
-public class TestBeanFactory extends AbstractFactory {
+public class TestBeanFactory {
 
-    /**
-     * Return <b>false</b> if this factory cannot create the requested object.
-     */
-    public boolean createObject(
-        JXPathContext context,
-        Pointer pointer,
-        Object parent,
-        String name,
-        int index) 
-    {
-        if (name.equals("nestedBean")) {
-            ((TestBean) parent).setNestedBean(new NestedTestBean("newName"));
-            return true;
-        }
-        else if (name.equals("beans")) {
-            TestBean bean = (TestBean) parent;
-            if (bean.getBeans() == null || index >= bean.getBeans().length) {
-                bean.setBeans(new NestedTestBean[index + 1]);
-            }
-            bean.getBeans()[index] = new NestedTestBean("newName");
-            return true;
-        }
-        else if (name.equals("integers")) {
-            // This will implicitly expand the collection        
-             ((TestBean) parent).setIntegers(index, 0);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Create a new object and set it on the specified variable
-     */
-    public boolean declareVariable(JXPathContext context, String name) {
-        return false;
-    }
+	public static AbstractFactory mockAbstractFactory1() {
+		AbstractFactory mockInstance = spy(AbstractFactory.class);
+		doReturn(false).when(mockInstance).declareVariable(any(JXPathContext.class), any(String.class));
+		doAnswer((stubInvo) -> {
+			Object parent = stubInvo.getArgument(2);
+			String name = stubInvo.getArgument(3);
+			int index = stubInvo.getArgument(4);
+			if (name.equals("nestedBean")) {
+				((TestBean) parent).setNestedBean(new NestedTestBean("newName"));
+				return true;
+			} else if (name.equals("beans")) {
+				TestBean bean = (TestBean) parent;
+				if (bean.getBeans() == null || index >= bean.getBeans().length) {
+					bean.setBeans(new NestedTestBean[index + 1]);
+				}
+				bean.getBeans()[index] = new NestedTestBean("newName");
+				return true;
+			} else if (name.equals("integers")) {
+				((TestBean) parent).setIntegers(index, 0);
+				return true;
+			}
+			return false;
+		}).when(mockInstance).createObject(any(JXPathContext.class), any(Pointer.class), any(Object.class),
+				any(String.class), anyInt());
+		return mockInstance;
+	}
 }

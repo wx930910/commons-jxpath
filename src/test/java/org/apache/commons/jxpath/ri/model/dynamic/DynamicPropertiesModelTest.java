@@ -33,330 +33,238 @@ import org.apache.commons.jxpath.TestBean;
  */
 
 public class DynamicPropertiesModelTest extends JXPathTestCase {
-    private JXPathContext context;
+	private JXPathContext context;
 
-    public void setUp() {
-        if (context == null) {
-            context = JXPathContext.newContext(new TestBean());
-            context.setFactory(new TestDynamicPropertyFactory());
-        }
-    }
+	public void setUp() {
+		if (context == null) {
+			context = JXPathContext.newContext(new TestBean());
+			context.setFactory(TestDynamicPropertyFactory.mockAbstractFactory1());
+		}
+	}
 
-    public void testAxisChild() {
-        assertXPathValue(context, "map/Key1", "Value 1");
+	public void testAxisChild() {
+		assertXPathValue(context, "map/Key1", "Value 1");
 
-        assertXPathPointer(context, "map/Key1", "/map[@name='Key1']");
+		assertXPathPointer(context, "map/Key1", "/map[@name='Key1']");
 
-        assertXPathValue(context, "map/Key2/name", "Name 6");
+		assertXPathValue(context, "map/Key2/name", "Name 6");
 
-        assertXPathPointer(context, "map/Key2/name", "/map[@name='Key2']/name");
-    }
+		assertXPathPointer(context, "map/Key2/name", "/map[@name='Key2']/name");
+	}
 
-    public void testAxisDescendant() {
-        assertXPathValue(context, "//Key1", "Value 1");
-    }
+	public void testAxisDescendant() {
+		assertXPathValue(context, "//Key1", "Value 1");
+	}
 
-    /**
-     * Testing the pseudo-attribute "name" that dynamic property
-     * objects appear to have.
-     */
-    public void testAttributeName() {
-        assertXPathValue(context, "map[@name = 'Key1']", "Value 1");
+	/**
+	 * Testing the pseudo-attribute "name" that dynamic property objects appear to
+	 * have.
+	 */
+	public void testAttributeName() {
+		assertXPathValue(context, "map[@name = 'Key1']", "Value 1");
 
-        assertXPathPointer(
-            context,
-            "map[@name = 'Key1']",
-            "/map[@name='Key1']");
+		assertXPathPointer(context, "map[@name = 'Key1']", "/map[@name='Key1']");
 
-        assertXPathPointerLenient(
-            context,
-            "map[@name = 'Key&quot;&apos;&quot;&apos;1']",
-            "/map[@name='Key&quot;&apos;&quot;&apos;1']");
+		assertXPathPointerLenient(context, "map[@name = 'Key&quot;&apos;&quot;&apos;1']",
+				"/map[@name='Key&quot;&apos;&quot;&apos;1']");
 
-        assertXPathValue(context, "/.[@name='map']/Key2/name", "Name 6");
+		assertXPathValue(context, "/.[@name='map']/Key2/name", "Name 6");
 
-        assertXPathPointer(
-            context,
-            "/.[@name='map']/Key2/name",
-            "/map[@name='Key2']/name");
+		assertXPathPointer(context, "/.[@name='map']/Key2/name", "/map[@name='Key2']/name");
 
-        // Bean in a map
-        assertXPathValue(context, "/map[@name='Key2'][@name='name']", "Name 6");
+		// Bean in a map
+		assertXPathValue(context, "/map[@name='Key2'][@name='name']", "Name 6");
 
-        assertXPathPointer(
-            context,
-            "/map[@name='Key2'][@name='name']",
-            "/map[@name='Key2']/name");
+		assertXPathPointer(context, "/map[@name='Key2'][@name='name']", "/map[@name='Key2']/name");
 
-        // Map in a bean in a map
-        assertXPathValue(
-            context,
-            "/.[@name='map'][@name='Key2'][@name='name']",
-            "Name 6");
+		// Map in a bean in a map
+		assertXPathValue(context, "/.[@name='map'][@name='Key2'][@name='name']", "Name 6");
 
-        assertXPathPointer(
-            context,
-            "/.[@name='map'][@name='Key2'][@name='name']",
-            "/map[@name='Key2']/name");
-                        
-        ((Map)context.getValue("map")).put("Key:3", "value3");
-        
-        assertXPathValueAndPointer(
-            context,
-            "/map[@name='Key:3']",
-            "value3",
-            "/map[@name='Key:3']");
+		assertXPathPointer(context, "/.[@name='map'][@name='Key2'][@name='name']", "/map[@name='Key2']/name");
 
-        assertXPathValueAndPointer(
-            context,
-            "/map[@name='Key:4:5']",
-            null,
-            "/map[@name='Key:4:5']");
-    }
+		((Map) context.getValue("map")).put("Key:3", "value3");
 
-    public void testSetPrimitiveValue() {
-        assertXPathSetValue(context, "map/Key1", new Integer(6));
-    }
+		assertXPathValueAndPointer(context, "/map[@name='Key:3']", "value3", "/map[@name='Key:3']");
 
-    public void testSetCollection() {
-        // See if we can assign a whole collection        
-        context.setValue(
-            "map/Key1",
-            new Integer[] { new Integer(7), new Integer(8)});
+		assertXPathValueAndPointer(context, "/map[@name='Key:4:5']", null, "/map[@name='Key:4:5']");
+	}
 
-        // And then an element in that collection
-        assertXPathSetValue(context, "map/Key1[1]", new Integer(9));
-    }
+	public void testSetPrimitiveValue() {
+		assertXPathSetValue(context, "map/Key1", new Integer(6));
+	}
 
-    /**
-     * The key does not exist, but the assignment should succeed anyway,
-     * because you should always be able to store anything in a Map.
-     */
-    public void testSetNewKey() {
-        // Using a "simple" path
-        assertXPathSetValue(context, "map/Key4", new Integer(7));
-        
-        // Using a "non-simple" path
-        assertXPathPointerLenient(context, "//map/Key5", "/map/Key5");
-        
-        assertXPathSetValue(context, "//map/Key5", new Integer(8));
-    }
+	public void testSetCollection() {
+		// See if we can assign a whole collection
+		context.setValue("map/Key1", new Integer[] { new Integer(7), new Integer(8) });
 
-    public void testCreatePath() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+		// And then an element in that collection
+		assertXPathSetValue(context, "map/Key1[1]", new Integer(9));
+	}
 
-        // Calls factory.createObject(..., testBean, "map"), then
-        // sets the value
-        assertXPathCreatePath(
-            context,
-            "/map[@name='TestKey1']",
-            "",
-            "/map[@name='TestKey1']");
-    }
+	/**
+	 * The key does not exist, but the assignment should succeed anyway, because you
+	 * should always be able to store anything in a Map.
+	 */
+	public void testSetNewKey() {
+		// Using a "simple" path
+		assertXPathSetValue(context, "map/Key4", new Integer(7));
 
-    public void testCreatePathAndSetValue() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+		// Using a "non-simple" path
+		assertXPathPointerLenient(context, "//map/Key5", "/map/Key5");
 
-        // Calls factory.createObject(..., testBean, "map"), then
-        // sets the value
-        assertXPathCreatePathAndSetValue(
-            context,
-            "/map[@name='TestKey1']",
-            "Test",
-            "/map[@name='TestKey1']");
-    }
+		assertXPathSetValue(context, "//map/Key5", new Integer(8));
+	}
 
-    public void testCreatePathCreateBean() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+	public void testCreatePath() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        // Calls factory.createObject(..., testBean, "map"), then
-        // then factory.createObject(..., map, "TestKey2"), then
-        // sets the value
-        assertXPathCreatePath(
-            context,
-            "/map[@name='TestKey2']/int",
-            new Integer(1),
-            "/map[@name='TestKey2']/int");
-    }
+		// Calls factory.createObject(..., testBean, "map"), then
+		// sets the value
+		assertXPathCreatePath(context, "/map[@name='TestKey1']", "", "/map[@name='TestKey1']");
+	}
 
-    public void testCreatePathAndSetValueCreateBean() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+	public void testCreatePathAndSetValue() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        // Calls factory.createObject(..., testBean, "map"), then
-        // then factory.createObject(..., map, "TestKey2"), then
-        // sets the value
-        assertXPathCreatePathAndSetValue(
-            context,
-            "/map[@name='TestKey2']/int",
-            new Integer(4),
-            "/map[@name='TestKey2']/int");
-    }
+		// Calls factory.createObject(..., testBean, "map"), then
+		// sets the value
+		assertXPathCreatePathAndSetValue(context, "/map[@name='TestKey1']", "Test", "/map[@name='TestKey1']");
+	}
 
-    public void testCreatePathCollectionElement() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+	public void testCreatePathCreateBean() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        assertXPathCreatePath(
-            context,
-            "/map/TestKey3[2]",
-            null,
-            "/map[@name='TestKey3'][2]");
+		// Calls factory.createObject(..., testBean, "map"), then
+		// then factory.createObject(..., map, "TestKey2"), then
+		// sets the value
+		assertXPathCreatePath(context, "/map[@name='TestKey2']/int", new Integer(1), "/map[@name='TestKey2']/int");
+	}
 
-        // Should be the same as the one before
-        assertXPathCreatePath(
-            context,
-            "/map[@name='TestKey3'][3]",
-            null,
-            "/map[@name='TestKey3'][3]");
-    }
+	public void testCreatePathAndSetValueCreateBean() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-    public void testCreatePathAndSetValueCollectionElement() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+		// Calls factory.createObject(..., testBean, "map"), then
+		// then factory.createObject(..., map, "TestKey2"), then
+		// sets the value
+		assertXPathCreatePathAndSetValue(context, "/map[@name='TestKey2']/int", new Integer(4),
+				"/map[@name='TestKey2']/int");
+	}
 
-        assertXPathCreatePathAndSetValue(
-            context,
-            "/map/TestKey3[2]",
-            "Test1",
-            "/map[@name='TestKey3'][2]");
+	public void testCreatePathCollectionElement() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        // Should be the same as the one before
-        assertXPathCreatePathAndSetValue(
-            context,
-            "/map[@name='TestKey3'][3]",
-            "Test2",
-            "/map[@name='TestKey3'][3]");
-    }
+		assertXPathCreatePath(context, "/map/TestKey3[2]", null, "/map[@name='TestKey3'][2]");
 
-    public void testCreatePathNewCollectionElement() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+		// Should be the same as the one before
+		assertXPathCreatePath(context, "/map[@name='TestKey3'][3]", null, "/map[@name='TestKey3'][3]");
+	}
 
-        // Create an element of a dynamic map element, which is a collection
-        assertXPathCreatePath(
-            context,
-            "/map/TestKey4[1]/int",
-            new Integer(1),
-            "/map[@name='TestKey4'][1]/int");
+	public void testCreatePathAndSetValueCollectionElement() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        bean.getMap().remove("TestKey4");
+		assertXPathCreatePathAndSetValue(context, "/map/TestKey3[2]", "Test1", "/map[@name='TestKey3'][2]");
 
-        // Should be the same as the one before
-        assertXPathCreatePath(
-            context,
-            "/map/TestKey4[1]/int",
-            new Integer(1),
-            "/map[@name='TestKey4'][1]/int");
-    }
+		// Should be the same as the one before
+		assertXPathCreatePathAndSetValue(context, "/map[@name='TestKey3'][3]", "Test2", "/map[@name='TestKey3'][3]");
+	}
 
-    public void testCreatePathAndSetValueNewCollectionElement() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.setMap(null);
+	public void testCreatePathNewCollectionElement() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        // Create an element of a dynamic map element, which is a collection
-        assertXPathCreatePathAndSetValue(
-            context,
-            "/map/TestKey4[1]/int",
-            new Integer(2),
-            "/map[@name='TestKey4'][1]/int");
+		// Create an element of a dynamic map element, which is a collection
+		assertXPathCreatePath(context, "/map/TestKey4[1]/int", new Integer(1), "/map[@name='TestKey4'][1]/int");
 
-        bean.getMap().remove("TestKey4");
+		bean.getMap().remove("TestKey4");
 
-        // Should be the same as the one before
-        assertXPathCreatePathAndSetValue(
-            context,
-            "/map/TestKey4[1]/int",
-            new Integer(3),
-            "/map[@name='TestKey4'][1]/int");
-    }
+		// Should be the same as the one before
+		assertXPathCreatePath(context, "/map/TestKey4[1]/int", new Integer(1), "/map[@name='TestKey4'][1]/int");
+	}
 
-    public void testRemovePath() {
-        TestBean bean = (TestBean) context.getContextBean();
-        bean.getMap().put("TestKey1", "test");
+	public void testCreatePathAndSetValueNewCollectionElement() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.setMap(null);
 
-        // Remove dynamic property
-        context.removePath("map[@name = 'TestKey1']");
-        assertEquals(
-            "Remove dynamic property value",
-            null,
-            context.getValue("map[@name = 'TestKey1']"));
-    }
+		// Create an element of a dynamic map element, which is a collection
+		assertXPathCreatePathAndSetValue(context, "/map/TestKey4[1]/int", new Integer(2),
+				"/map[@name='TestKey4'][1]/int");
 
-    public void testRemovePathArrayElement() {
-        TestBean bean = (TestBean) context.getContextBean();
+		bean.getMap().remove("TestKey4");
 
-        bean.getMap().put("TestKey2", new String[] { "temp1", "temp2" });
-        context.removePath("map[@name = 'TestKey2'][1]");
-        assertEquals(
-            "Remove dynamic property collection element",
-            "temp2",
-            context.getValue("map[@name = 'TestKey2'][1]"));
-    }
-    
-    public void testCollectionOfMaps() {
-        TestBean bean = (TestBean) context.getContextBean();
-        List list = new ArrayList();
+		// Should be the same as the one before
+		assertXPathCreatePathAndSetValue(context, "/map/TestKey4[1]/int", new Integer(3),
+				"/map[@name='TestKey4'][1]/int");
+	}
 
-        bean.getMap().put("stuff", list);        
+	public void testRemovePath() {
+		TestBean bean = (TestBean) context.getContextBean();
+		bean.getMap().put("TestKey1", "test");
 
-        Map m = new HashMap();
-        m.put("fruit", "apple");
-        list.add(m);
+		// Remove dynamic property
+		context.removePath("map[@name = 'TestKey1']");
+		assertEquals("Remove dynamic property value", null, context.getValue("map[@name = 'TestKey1']"));
+	}
 
-        m = new HashMap();
-        m.put("berry", "watermelon");
-        list.add(m);
+	public void testRemovePathArrayElement() {
+		TestBean bean = (TestBean) context.getContextBean();
 
-        m = new HashMap();
-        m.put("fruit", "banana");
-        list.add(m);
+		bean.getMap().put("TestKey2", new String[] { "temp1", "temp2" });
+		context.removePath("map[@name = 'TestKey2'][1]");
+		assertEquals("Remove dynamic property collection element", "temp2",
+				context.getValue("map[@name = 'TestKey2'][1]"));
+	}
 
-        assertXPathValueIterator(
-            context,
-            "/map/stuff/fruit",
-            list("apple", "banana"));
+	public void testCollectionOfMaps() {
+		TestBean bean = (TestBean) context.getContextBean();
+		List list = new ArrayList();
 
-        assertXPathValueIterator(
-            context,
-            "/map/stuff[@name='fruit']",
-            list("apple", "banana"));        
-    }
+		bean.getMap().put("stuff", list);
 
-    public void testMapOfMaps() {
-        TestBean bean = (TestBean) context.getContextBean();
+		Map m = new HashMap();
+		m.put("fruit", "apple");
+		list.add(m);
 
-        Map fruit = new HashMap();
-        fruit.put("apple", "green");
-        fruit.put("orange", "red");
-        
-        Map meat = new HashMap();
-        meat.put("pork", "pig");
-        meat.put("beef", "cow");
-        
-        bean.getMap().put("fruit", fruit);        
-        bean.getMap().put("meat", meat);        
-                
-        assertXPathPointer(
-            context,
-            "//beef",
-            "/map[@name='meat'][@name='beef']");
-        
-        assertXPathPointer(
-            context,
-            "map//apple",
-            "/map[@name='fruit'][@name='apple']");
+		m = new HashMap();
+		m.put("berry", "watermelon");
+		list.add(m);
 
-        // Ambiguous search - will return nothing
-        assertXPathPointerLenient(context, "map//banana", "null()");
-        
-        // Unambiguous, even though the particular key is missing 
-        assertXPathPointerLenient(
-            context,
-            "//fruit/pear",
-            "/map[@name='fruit']/pear");
-    }
+		m = new HashMap();
+		m.put("fruit", "banana");
+		list.add(m);
+
+		assertXPathValueIterator(context, "/map/stuff/fruit", list("apple", "banana"));
+
+		assertXPathValueIterator(context, "/map/stuff[@name='fruit']", list("apple", "banana"));
+	}
+
+	public void testMapOfMaps() {
+		TestBean bean = (TestBean) context.getContextBean();
+
+		Map fruit = new HashMap();
+		fruit.put("apple", "green");
+		fruit.put("orange", "red");
+
+		Map meat = new HashMap();
+		meat.put("pork", "pig");
+		meat.put("beef", "cow");
+
+		bean.getMap().put("fruit", fruit);
+		bean.getMap().put("meat", meat);
+
+		assertXPathPointer(context, "//beef", "/map[@name='meat'][@name='beef']");
+
+		assertXPathPointer(context, "map//apple", "/map[@name='fruit'][@name='apple']");
+
+		// Ambiguous search - will return nothing
+		assertXPathPointerLenient(context, "map//banana", "null()");
+
+		// Unambiguous, even though the particular key is missing
+		assertXPathPointerLenient(context, "//fruit/pear", "/map[@name='fruit']/pear");
+	}
 }

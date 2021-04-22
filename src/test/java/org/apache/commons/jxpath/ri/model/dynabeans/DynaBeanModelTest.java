@@ -30,11 +30,11 @@ import org.apache.commons.jxpath.ri.model.BeanModelTestCase;
 
 public class DynaBeanModelTest extends BeanModelTestCase {
 
-    protected Object createContextBean() {
-        return new WrapDynaBean(new TestBean());
-    }
+	protected Object createContextBean() {
+		return new WrapDynaBean(new TestBean());
+	}
 
-    protected AbstractFactory getAbstractFactory() {
-        return new TestDynaBeanFactory();
-    }
+	protected AbstractFactory getAbstractFactory() {
+		return TestDynaBeanFactory.mockAbstractFactory1();
+	}
 }
